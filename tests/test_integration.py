@@ -404,7 +404,7 @@ def test_real_homeassistant_types_and_identity() -> None:
     )
     assert DOMAIN == "evn_cskh"
     assert NAME == "EVN CSKH"
-    assert VERSION == "0.9.1"
+    assert VERSION == "0.9.2"
     assert MIN_HA_VERSION == "2025.12"
     assert PLATFORMS == (Platform.SENSOR, Platform.BUTTON, Platform.BINARY_SENSOR)
     assert binary_sensor.PLATFORMS is PLATFORMS
@@ -1109,6 +1109,8 @@ async def test_coordinator_exception_mapping(
     assert not isinstance(caught.value, ConfigEntryAuthFailed) or issubclass(
         failure, EvnAuthError
     )
+    if expected is UpdateFailed:
+        assert caught.value.retry_after == 300
 
 
 @pytest.mark.asyncio

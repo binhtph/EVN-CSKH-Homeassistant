@@ -1118,7 +1118,6 @@ async def test_runtime_retry_schedule_publication(
     states = sensor_states(hass, entry)
     assert states["daily_energy"].state == "1.25"
     assert states["consumption_today"].state == STATE_UNKNOWN
-    previous = datetime.fromisoformat(states["next_update"].state)
     updates = Mock(wraps=coordinator.async_update_listeners)
     monkeypatch.setattr(coordinator, "async_update_listeners", updates)
     start_reauth = Mock()
@@ -1153,7 +1152,8 @@ async def test_runtime_retry_schedule_publication(
             states = sensor_states(hass, entry)
             next_update = states.pop("next_update")
             stamp = datetime.fromisoformat(next_update.state)
-            assert stamp > previous + timedelta(seconds=30)
+            assert timedelta(seconds=30) < stamp - clock.now(UTC)
+            assert stamp - clock.now(UTC) <= timedelta(seconds=301)
             assert updates.call_count == attempt
             next_iteration = coordinator.next_iteration
             assert next_iteration is not None
@@ -1165,7 +1165,6 @@ async def test_runtime_retry_schedule_publication(
             assert all(
                 "last_update" not in state.attributes for state in states.values()
             )
-            previous = stamp
         start_reauth.assert_not_called()
         offline_evn.failure = EvnAuthError()
         await refresh()

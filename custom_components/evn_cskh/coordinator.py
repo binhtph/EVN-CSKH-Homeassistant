@@ -30,6 +30,8 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+_TRANSIENT_RETRY_AFTER = 300
+
 
 def customer_key(customer: Customer) -> str:
     return f"{customer.management_unit}:{customer.code}"
@@ -127,11 +129,20 @@ class EvnCoordinator(DataUpdateCoordinator[dict[str, Snapshot]]):
                 translation_key="auth_failed",
             ) from None
         except EvnConnectionError:
-            raise UpdateFailed("EVN service is temporarily unavailable.") from None
+            raise UpdateFailed(
+                "EVN service is temporarily unavailable.",
+                retry_after=_TRANSIENT_RETRY_AFTER,
+            ) from None
         except EvnResponseError:
-            raise UpdateFailed("EVN returned an invalid response.") from None
+            raise UpdateFailed(
+                "EVN returned an invalid response.",
+                retry_after=_TRANSIENT_RETRY_AFTER,
+            ) from None
         except EvnError:
-            raise UpdateFailed("EVN update failed.") from None
+            raise UpdateFailed(
+                "EVN update failed.",
+                retry_after=_TRANSIENT_RETRY_AFTER,
+            ) from None
 
 
 type EvnConfigEntry = ConfigEntry[EvnCoordinator]
